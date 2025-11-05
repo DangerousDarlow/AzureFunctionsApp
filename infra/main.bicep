@@ -22,7 +22,7 @@ var applicationInsightsName = '${resourceNamePrefix}-ai'
 var appServicePlanName = '${resourceNamePrefix}-asp'
 
 // Storage Account for Azure Functions
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   name: storageAccountName
   location: location
   tags: tags
@@ -39,7 +39,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 }
 
 // Log Analytics Workspace for structured logging
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
   name: logAnalyticsWorkspaceName
   location: location
   tags: tags
@@ -70,7 +70,7 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 // App Service Plan - Consumption (Dynamic) on Linux
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: appServicePlanName
   location: location
   tags: tags
@@ -85,7 +85,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
 }
 
 // Azure Functions App
-resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
+resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
   name: functionAppName
   location: location
   tags: tags
@@ -95,9 +95,6 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     reserved: true
     isXenon: false
     hyperV: false
-    vnetRouteAllEnabled: false
-    vnetImagePullEnabled: false
-    vnetContentShareEnabled: false
     siteConfig: {
       numberOfWorkers: 1
       linuxFxVersion: 'DOTNET-ISOLATED|9.0'
