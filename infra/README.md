@@ -28,7 +28,7 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 
 - `main.bicep` - Main Bicep template defining all Azure resources
 - `main.parameters.json` - JSON parameters file with base configuration values
-- `deploy.ps1` - PowerShell deployment script that handles environment-specific deployments
+- `provision.ps1` - PowerShell deployment script that handles environment-specific deployments
 
 ## Quick Deployment
 
@@ -42,7 +42,7 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 
 2. Run deployment script
    ```powershell
-   .\deploy.ps1 -SubscriptionId {subscription_id} -Environment {environment}
+   .\provision.ps1 -SubscriptionId {subscription_id} -Environment {environment}
    ```
 
    The script will automatically:
