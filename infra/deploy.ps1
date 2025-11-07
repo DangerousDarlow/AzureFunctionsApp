@@ -9,7 +9,7 @@ param(
     [string]$Environment,
     
     [Parameter(Mandatory = $false)]
-    [string]$ParametersFile = "main.parameters.yml",
+    [string]$ParametersFile = "main.parameters.json",
     
     [Parameter(Mandatory = $false)]
     [string]$BicepFile = "main.bicep"
@@ -71,15 +71,7 @@ Write-Host "Current subscription: $currentSubscription" -ForegroundColor Blue
 
 # Read parameters from parameters file
 Write-Host "Reading parameters from file..." -ForegroundColor Blue
-
-# Install powershell-yaml module if not already installed
-if (-not (Get-Module -ListAvailable -Name powershell-yaml)) {
-    Write-Host "Installing powershell-yaml module..." -ForegroundColor Yellow
-    Install-Module -Name powershell-yaml -Force -Scope CurrentUser -ErrorAction Stop
-}
-
-Import-Module powershell-yaml
-$parametersContent = Get-Content -Path $ParametersFile -Raw | ConvertFrom-Yaml
+$parametersContent = Get-Content -Path $ParametersFile -Raw | ConvertFrom-Json
 $Location = $parametersContent.parameters.location.value
 $FunctionAppName = $parametersContent.parameters.functionAppName.value
 

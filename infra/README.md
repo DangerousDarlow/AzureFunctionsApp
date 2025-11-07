@@ -27,13 +27,13 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 ## Files
 
 - `main.bicep` - Main Bicep template defining all Azure resources
-- `main.parameters.yml` - YAML parameters file with base configuration values
+- `main.parameters.json` - JSON parameters file with base configuration values
 - `deploy.ps1` - PowerShell deployment script that handles environment-specific deployments
 
 ## Quick Deployment
 
-1. Update parameters (optional)
-   Edit `main.parameters.yml` to customize:
+1. **Update parameters** (optional):
+   Edit `main.parameters.json` to customize:
    - Function app name
    - Location
 
@@ -60,7 +60,7 @@ az group create --name "rg-azurefuncapp-dev" --location "ukwest"
 az deployment group create \
   --resource-group "rg-azurefuncapp-dev" \
   --template-file main.bicep \
-  --parameters main.parameters.yml \
+  --parameters main.parameters.json \
   --parameters environment=dev
 ```
 
@@ -68,7 +68,7 @@ az deployment group create \
 
 The deployment model supports multiple environments without needing separate parameter files:
 
-- **Parameters File** (`main.parameters.yml`): Contains base configuration (app name, location)
+- **Parameters File** (`main.parameters.json`): Contains base configuration (app name, location)
 - **Environment Parameter**: Passed at deployment time to create environment-specific resources
 - **Resource Group Naming**: Automatically follows pattern `rg-{functionAppName}-{environment}`
 - **Tags**: Dynamically generated in Bicep using the environment parameter
