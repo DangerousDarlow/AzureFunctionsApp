@@ -73,14 +73,14 @@ Write-Host "Current subscription: $currentSubscription" -ForegroundColor Blue
 Write-Host "Reading parameters from file..." -ForegroundColor Blue
 $parametersContent = Get-Content -Path $ParametersFile -Raw | ConvertFrom-Json
 $Location = $parametersContent.parameters.location.value
-$FunctionAppName = $parametersContent.parameters.functionAppName.value
+$Name = $parametersContent.parameters.name.value
 
 # Build resource group name from pattern: rg-{appname}-{environment}
-$ResourceGroupName = "rg-$FunctionAppName-$Environment"
+$ResourceGroupName = "rg-$Name-$Environment"
 
 Write-Host "Environment: $Environment" -ForegroundColor Blue
 Write-Host "Location: $Location" -ForegroundColor Blue
-Write-Host "Function App Name: $FunctionAppName" -ForegroundColor Blue
+Write-Host "Function App Base Name: $Name" -ForegroundColor Blue
 Write-Host "Resource Group Name: $ResourceGroupName" -ForegroundColor Blue
 
 # Create resource group if it doesn't exist

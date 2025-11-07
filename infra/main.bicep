@@ -1,5 +1,5 @@
-@description('The name of the Azure Functions app')
-param functionAppName string
+@description('The base name of the Azure Functions app')
+param name string
 
 @description('The location for all resources')
 param location string
@@ -15,11 +15,11 @@ var tags object = {
 }
 
 // Variables
-var resourceNamePrefix = '${functionAppName}-${environment}'
-var storageAccountName = take('${replace(resourceNamePrefix, '-', '')}sa', 24)
-var logAnalyticsWorkspaceName = '${resourceNamePrefix}-law'
-var applicationInsightsName = '${resourceNamePrefix}-ai'
-var appServicePlanName = '${resourceNamePrefix}-asp'
+var functionAppName = '${name}-${environment}'
+var storageAccountName = take('${replace(functionAppName, '-', '')}san', 24)
+var logAnalyticsWorkspaceName = '${functionAppName}-law'
+var applicationInsightsName = '${functionAppName}-ai'
+var appServicePlanName = '${functionAppName}-asp'
 
 // Storage Account for Azure Functions
 resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
