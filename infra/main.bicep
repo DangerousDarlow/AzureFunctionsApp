@@ -2,10 +2,10 @@
 param functionAppName string
 
 @description('The location for all resources')
-param location string = 'ukwest'
+param location string
 
 @description('The environment name (e.g., dev, test, prod)')
-param environment string = 'prod'
+param environment string
 
 @description('Tags to apply to all resources')
 param tags object = {

@@ -102,13 +102,6 @@ After deployment, the following outputs are available:
 - Application Insights Name and Keys
 - Log Analytics Workspace ID
 
-## Next Steps
-
-1. Deploy your .NET 9 Function App code
-2. Configure any additional environment variables
-3. Set up CI/CD pipeline for automated deployments
-4. Configure monitoring alerts and dashboards
-
 ## Customization
 
 To modify the infrastructure:

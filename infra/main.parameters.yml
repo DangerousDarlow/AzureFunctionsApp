@@ -1,0 +1,21 @@
+# Azure Functions Infrastructure Parameters
+# This file contains the parameters for deploying the Azure Functions app infrastructure
+
+using: main.bicep
+
+# Parameters
+parameters:
+  functionAppName:
+    value: azurefuncapp
+  
+  location:
+    value: ukwest
+  
+  environment:
+    value: dev
+  
+  tags:
+    value:
+      Environment: dev
+      Project: AzureFunctionsApp
+      ManagedBy: Bicep

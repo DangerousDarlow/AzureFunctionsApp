@@ -2,17 +2,14 @@
 # This script deploys the Azure Functions app infrastructure using Bicep
 
 param(
+    [Parameter(Mandatory = $false)]
+    [string]$SubscriptionId,
+
     [Parameter(Mandatory = $true)]
     [string]$ResourceGroupName,
     
     [Parameter(Mandatory = $false)]
-    [string]$Location = "ukwest",
-    
-    [Parameter(Mandatory = $false)]
-    [string]$SubscriptionId,
-    
-    [Parameter(Mandatory = $false)]
-    [string]$ParametersFile = "main.parameters.json",
+    [string]$ParametersFile = "main.parameters.yml",
     
     [Parameter(Mandatory = $false)]
     [string]$BicepFile = "main.bicep"
@@ -71,6 +68,21 @@ if ($SubscriptionId) {
 # Show current subscription
 $currentSubscription = az account show --query "name" -o tsv
 Write-Host "Current subscription: $currentSubscription" -ForegroundColor Blue
+
+# Read location from parameters file
+Write-Host "Reading location from parameters file..." -ForegroundColor Blue
+
+# Install powershell-yaml module if not already installed
+if (-not (Get-Module -ListAvailable -Name powershell-yaml)) {
+    Write-Host "Installing powershell-yaml module..." -ForegroundColor Yellow
+    Install-Module -Name powershell-yaml -Force -Scope CurrentUser -ErrorAction Stop
+}
+
+Import-Module powershell-yaml
+$parametersContent = Get-Content -Path $ParametersFile -Raw | ConvertFrom-Yaml
+$Location = $parametersContent.parameters.location.value
+
+Write-Host "Location: $Location" -ForegroundColor Blue
 
 # Create resource group if it doesn't exist
 Write-Host "Checking if resource group '$ResourceGroupName' exists..." -ForegroundColor Blue
@@ -136,7 +148,3 @@ if ($outputs) {
 }
 
 Write-Host "Azure Functions infrastructure deployment completed!" -ForegroundColor Green
-Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Deploy your function code to the Azure Functions app" -ForegroundColor White
-Write-Host "  2. Configure any additional settings or environment variables" -ForegroundColor White
-Write-Host "  3. Test your functions using the provided URL" -ForegroundColor White
