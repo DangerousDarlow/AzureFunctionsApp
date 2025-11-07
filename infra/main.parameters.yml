@@ -1,9 +1,0 @@
-using: main.bicep
-
-# Parameters
-parameters:
-  functionAppName:
-    value: azurefuncapp
-  
-  location:
-    value: ukwest
