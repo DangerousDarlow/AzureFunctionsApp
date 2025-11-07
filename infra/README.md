@@ -32,10 +32,13 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 
 ## Quick Deployment
 
+> [!IMPORTANT]
+> Azure function app names must be globally unique. The function app name will be `{name}-{environment}` where `name` is the base name defined in `main.parameters.json` and `environment` is passed at deployment time. For example, if `name` is "azurefuncapp" and `environment` is "dev", the function app will be named "azurefuncapp-dev".
+
 1. **Update parameters** (optional):
    Edit `main.parameters.json` to customize:
-   - Function app name
-   - Location
+   - `name` - Base name for the function app (without environment suffix)
+   - `location` - Azure region for all resources
 
 2. Run deployment script
    ```powershell
@@ -43,8 +46,8 @@ This directory contains Bicep templates and deployment scripts for provisioning 
    ```
 
    The script will automatically:
-   - Create a resource group named `rg-{functionAppName}-{environment}`
-   - Read base configuration from `main.parameters.yml`
+   - Create a resource group named `rg-{name}-{environment}` (e.g., `rg-azurefuncapp-dev`)
+   - Read base configuration from `main.parameters.json`
    - Pass the environment parameter to the Bicep deployment
    - Deploy all infrastructure resources
 
@@ -68,12 +71,13 @@ az deployment group create \
 
 The deployment model supports multiple environments without needing separate parameter files:
 
-- **Parameters File** (`main.parameters.json`): Contains base configuration (app name, location)
-- **Environment Parameter**: Passed at deployment time to create environment-specific resources
-- **Resource Group Naming**: Automatically follows pattern `rg-{functionAppName}-{environment}`
+- **Parameters File** (`main.parameters.json`): Contains base configuration (`name` and `location`)
+- **Environment Parameter**: Passed at deployment time (e.g., `dev`, `test`, `prod`) to create environment-specific resources
+- **Resource Naming**: All resources automatically include the environment suffix (e.g., `azurefuncapp-dev`, `azurefuncapp-prod`)
+- **Resource Group Naming**: Automatically follows pattern `rg-{name}-{environment}`
 - **Tags**: Dynamically generated in Bicep using the environment parameter
 
-This approach is ideal for CI/CD pipelines (e.g., GitHub Actions) where environment values can be injected from workflow variables or secrets.
+This approach is ideal for CI/CD pipelines (e.g., GitHub Actions) where environment values can be injected from workflow variables or secrets without duplicating parameter files.
 
 ### Example Resource Groups
 - Dev: `rg-azurefuncapp-dev`
