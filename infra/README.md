@@ -27,21 +27,26 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 ## Files
 
 - `main.bicep` - Main Bicep template defining all Azure resources
-- `main.parameters.json` - Parameters file with default values
-- `deploy.ps1` - PowerShell deployment script
+- `main.parameters.yml` - YAML parameters file with base configuration values
+- `deploy.ps1` - PowerShell deployment script that handles environment-specific deployments
 
 ## Quick Deployment
 
-1. **Update parameters** (optional):
-   Edit `main.parameters.json` to customize:
+1. Update parameters (optional)
+   Edit `main.parameters.yml` to customize:
    - Function app name
-   - Environment name
-   - Tags
+   - Location
 
-2. **Run deployment script**:
+2. Run deployment script
    ```powershell
-   .\deploy.ps1 -ResourceGroupName "rg-azurefuncapp-dev"
+   .\deploy.ps1 -SubscriptionId {subscription_id} -Environment {environment}
    ```
+
+   The script will automatically:
+   - Create a resource group named `rg-{functionAppName}-{environment}`
+   - Read base configuration from `main.parameters.yml`
+   - Pass the environment parameter to the Bicep deployment
+   - Deploy all infrastructure resources
 
 ## Manual Deployment
 
@@ -55,8 +60,25 @@ az group create --name "rg-azurefuncapp-dev" --location "ukwest"
 az deployment group create \
   --resource-group "rg-azurefuncapp-dev" \
   --template-file main.bicep \
-  --parameters main.parameters.json
+  --parameters main.parameters.yml \
+  --parameters environment=dev
 ```
+
+## Environment-Based Deployments
+
+The deployment model supports multiple environments without needing separate parameter files:
+
+- **Parameters File** (`main.parameters.yml`): Contains base configuration (app name, location)
+- **Environment Parameter**: Passed at deployment time to create environment-specific resources
+- **Resource Group Naming**: Automatically follows pattern `rg-{functionAppName}-{environment}`
+- **Tags**: Dynamically generated in Bicep using the environment parameter
+
+This approach is ideal for CI/CD pipelines (e.g., GitHub Actions) where environment values can be injected from workflow variables or secrets.
+
+### Example Resource Groups
+- Dev: `rg-azurefuncapp-dev`
+- Test: `rg-azurefuncapp-test`
+- Prod: `rg-azurefuncapp-prod`
 
 ## Configuration Details
 
@@ -101,14 +123,6 @@ After deployment, the following outputs are available:
 - Storage Account Name
 - Application Insights Name and Keys
 - Log Analytics Workspace ID
-
-## Customization
-
-To modify the infrastructure:
-
-1. Update `main.bicep` with your changes
-2. Validate changes: `az deployment group validate --resource-group <rg-name> --template-file main.bicep --parameters main.parameters.json`
-3. Deploy updates using the deployment script or Azure CLI
 
 ## Security Considerations
 

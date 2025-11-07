@@ -7,8 +7,8 @@ param location string
 @description('The environment name (e.g., dev, test, prod)')
 param environment string
 
-@description('Tags to apply to all resources')
-param tags object = {
+// Tags to apply to all resources
+var tags object = {
   Environment: environment
   Project: 'AzureFunctionsApp'
   ManagedBy: 'Bicep'

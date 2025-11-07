@@ -6,7 +6,7 @@ param(
     [string]$SubscriptionId,
 
     [Parameter(Mandatory = $true)]
-    [string]$ResourceGroupName,
+    [string]$Environment,
     
     [Parameter(Mandatory = $false)]
     [string]$ParametersFile = "main.parameters.yml",
@@ -69,8 +69,8 @@ if ($SubscriptionId) {
 $currentSubscription = az account show --query "name" -o tsv
 Write-Host "Current subscription: $currentSubscription" -ForegroundColor Blue
 
-# Read location from parameters file
-Write-Host "Reading location from parameters file..." -ForegroundColor Blue
+# Read parameters from parameters file
+Write-Host "Reading parameters from file..." -ForegroundColor Blue
 
 # Install powershell-yaml module if not already installed
 if (-not (Get-Module -ListAvailable -Name powershell-yaml)) {
@@ -81,8 +81,15 @@ if (-not (Get-Module -ListAvailable -Name powershell-yaml)) {
 Import-Module powershell-yaml
 $parametersContent = Get-Content -Path $ParametersFile -Raw | ConvertFrom-Yaml
 $Location = $parametersContent.parameters.location.value
+$FunctionAppName = $parametersContent.parameters.functionAppName.value
 
+# Build resource group name from pattern: rg-{appname}-{environment}
+$ResourceGroupName = "rg-$FunctionAppName-$Environment"
+
+Write-Host "Environment: $Environment" -ForegroundColor Blue
 Write-Host "Location: $Location" -ForegroundColor Blue
+Write-Host "Function App Name: $FunctionAppName" -ForegroundColor Blue
+Write-Host "Resource Group Name: $ResourceGroupName" -ForegroundColor Blue
 
 # Create resource group if it doesn't exist
 Write-Host "Checking if resource group '$ResourceGroupName' exists..." -ForegroundColor Blue
@@ -104,7 +111,8 @@ Write-Host "Validating Bicep template..." -ForegroundColor Blue
 az deployment group validate `
     --resource-group $ResourceGroupName `
     --template-file $BicepFile `
-    --parameters $ParametersFile
+    --parameters $ParametersFile `
+    --parameters environment=$Environment
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Bicep template validation failed"
@@ -121,13 +129,13 @@ az deployment group create `
     --name $deploymentName `
     --template-file $BicepFile `
     --parameters $ParametersFile `
+    --parameters environment=$Environment `
     --verbose
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Deployment failed"
     exit 1
 }
-
 Write-Host "Deployment completed successfully!" -ForegroundColor Green
 
 # Get deployment outputs
