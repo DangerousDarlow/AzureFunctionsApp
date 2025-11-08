@@ -32,7 +32,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   }
   kind: 'StorageV2'
   properties: {
-    minimumTlsVersion: 'TLS1_3'
+    minimumTlsVersion: 'TLS1_2'
     defaultToOAuthAuthentication: true
   }
 }
@@ -96,7 +96,6 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
     serverFarmId: appServicePlan.id
     reserved: true
     siteConfig: {
-      linuxFxVersion: 'DOTNET-ISOLATED|9.0'
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -105,10 +104,6 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
           value: '~4'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet-isolated'
         }
         {
           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
