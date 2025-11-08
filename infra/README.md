@@ -6,7 +6,7 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 
 - **Runtime**: .NET 9 Isolated Worker
 - **Location**: UK West
-- **Hosting Plan**: Consumption (Dynamic) on Linux
+- **Hosting Plan**: Flex Consumption on Linux
 - **Storage**: Standard Locally Redundant Storage (LRS)
 - **Monitoring**: Application Insights with Log Analytics workspace
 
@@ -15,7 +15,7 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 1. **Storage Account** - Standard LRS for Azure Functions runtime
 2. **Log Analytics Workspace** - For structured logging and monitoring
 3. **Application Insights** - Connected to Log Analytics for telemetry
-4. **App Service Plan** - Consumption plan on Linux
+4. **App Service Plan** - Flex Consumption plan on Linux
 5. **Azure Functions App** - .NET 9 isolated worker runtime
 
 ## Prerequisites
@@ -77,13 +77,6 @@ The deployment model supports multiple environments without needing separate par
 - **Resource Group Naming**: Automatically follows pattern `rg-{name}-{environment}`
 - **Tags**: Dynamically generated in Bicep using the environment parameter
 
-This approach is ideal for CI/CD pipelines (e.g., GitHub Actions) where environment values can be injected from workflow variables or secrets without duplicating parameter files.
-
-### Example Resource Groups
-- Dev: `rg-azurefuncapp-dev`
-- Test: `rg-azurefuncapp-test`
-- Prod: `rg-azurefuncapp-prod`
-
 ## Configuration Details
 
 ### Storage Account
@@ -92,45 +85,21 @@ This approach is ideal for CI/CD pipelines (e.g., GitHub Actions) where environm
 - **Authentication**: Default to OAuth when possible
 
 ### App Service Plan
-- **SKU**: Y1 (Consumption/Dynamic tier)
+- **SKU**: FC1 (Flex Consumption tier)
 - **OS**: Linux
 - **Scaling**: Automatic based on demand
 
 ### Function App
-- **Runtime**: .NET Isolated 9.0 on Linux
+- **Runtime**: .NET Isolated on Linux
 - **Version**: Functions v4
 - **Security**: HTTPS only, TLS 1.2 minimum
 - **Deployment**: Run from package enabled
 
-### Monitoring
-- **Application Insights**: Connected to Log Analytics workspace
-- **Log Analytics**: 30-day retention, Per-GB pricing tier
-- **Structured Logging**: Enabled through Application Insights integration
-
-## Environment Variables
-
-The following application settings are automatically configured:
-
-- `AzureWebJobsStorage` - Storage account connection string
-- `WEBSITE_CONTENTAZUREFILECONNECTIONSTRING` - Content storage connection
-- `FUNCTIONS_EXTENSION_VERSION` - Set to ~4
-- `FUNCTIONS_WORKER_RUNTIME` - Set to dotnet-isolated
-- `APPINSIGHTS_INSTRUMENTATIONKEY` - Application Insights key
-- `APPLICATIONINSIGHTS_CONNECTION_STRING` - Application Insights connection string
-
 ## Outputs
 
 After deployment, the following outputs are available:
-
 - Function App Name
 - Function App URL
 - Storage Account Name
 - Application Insights Name and Keys
 - Log Analytics Workspace ID
-
-## Security Considerations
-
-- All resources use HTTPS only with TLS 1.2 minimum
-- Storage account has public blob access disabled
-- Function app uses managed identity where possible
-- Application settings are securely managed through Azure

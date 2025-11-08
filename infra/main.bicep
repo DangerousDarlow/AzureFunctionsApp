@@ -69,16 +69,15 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-// App Service Plan - Consumption (Dynamic) on Linux
+// App Service Plan - Flex Consumption on Linux
 resource appServicePlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: appServicePlanName
   location: location
   tags: tags
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'FC1'
+    tier: 'FlexConsumption'
   }
-  kind: 'functionapp'
   properties: {
     reserved: true // Required for Linux
   }
@@ -89,7 +88,7 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
   name: functionAppName
   location: location
   tags: tags
-  kind: 'functionapp,linux'
+  kind: 'functionapp,linux,container'
   properties: {
     serverFarmId: appServicePlan.id
     reserved: true
@@ -99,7 +98,6 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
       numberOfWorkers: 1
       linuxFxVersion: 'DOTNET-ISOLATED|9.0'
       alwaysOn: false
-      functionAppScaleLimit: 200
       minimumElasticInstanceCount: 0
       use32BitWorkerProcess: false
       ftpsState: 'FtpsOnly'
@@ -110,14 +108,6 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
         {
           name: 'AzureWebJobsStorage'
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};EndpointSuffix=${az.environment().suffixes.storage};AccountKey=${storageAccount.listKeys().keys[0].value}'
-        }
-        {
-          name: 'WEBSITE_CONTENTSHARE'
-          value: toLower(functionAppName)
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
