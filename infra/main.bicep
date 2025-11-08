@@ -22,6 +22,7 @@ var applicationInsightsName = '${functionAppName}-ai'
 var appServicePlanName = '${functionAppName}-asp'
 
 // Storage Account for Azure Functions
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.storage/2025-01-01/storageaccounts?pivots=deployment-language-bicep
 resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   name: storageAccountName
   location: location
@@ -31,14 +32,13 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   }
   kind: 'StorageV2'
   properties: {
-    supportsHttpsTrafficOnly: true
-    minimumTlsVersion: 'TLS1_2'
-    allowBlobPublicAccess: false
+    minimumTlsVersion: 'TLS1_3'
     defaultToOAuthAuthentication: true
   }
 }
 
 // Log Analytics Workspace for structured logging
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.operationalinsights/2025-02-01/workspaces?pivots=deployment-language-bicep
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
   name: logAnalyticsWorkspaceName
   location: location
@@ -55,6 +55,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2025-02
 }
 
 // Application Insights for monitoring and telemetry
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.insights/2020-02-02/components?pivots=deployment-language-bicep
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: applicationInsightsName
   location: location
@@ -70,6 +71,7 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 // App Service Plan - Flex Consumption on Linux
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.web/2024-11-01/serverfarms?pivots=deployment-language-bicep
 resource appServicePlan 'Microsoft.Web/serverfarms@2024-11-01' = {
   name: appServicePlanName
   location: location
@@ -79,31 +81,22 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2024-11-01' = {
     tier: 'FlexConsumption'
   }
   properties: {
-    reserved: true // Required for Linux
+    reserved: true // Linux app service plan
   }
 }
 
 // Azure Functions App
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.web/2024-11-01/sites?pivots=deployment-language-bicep
 resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
   name: functionAppName
   location: location
   tags: tags
-  kind: 'functionapp,linux,container'
+  kind: 'functionapp,linux'
   properties: {
     serverFarmId: appServicePlan.id
     reserved: true
-    isXenon: false
-    hyperV: false
     siteConfig: {
-      numberOfWorkers: 1
       linuxFxVersion: 'DOTNET-ISOLATED|9.0'
-      alwaysOn: false
-      minimumElasticInstanceCount: 0
-      use32BitWorkerProcess: false
-      ftpsState: 'FtpsOnly'
-      minTlsVersion: '1.2'
-      scmMinTlsVersion: '1.2'
-      http20Enabled: true
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -129,18 +122,29 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
           name: 'WEBSITE_RUN_FROM_PACKAGE'
           value: '1'
         }
-        {
-          name: 'WEBSITE_ENABLE_SYNC_UPDATE_SITE'
-          value: 'true'
-        }
-        {
-          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-          value: 'false'
-        }
       ]
     }
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: '${storageAccount.properties.primaryEndpoints.blob}deployments'
+          authentication: {
+            type: 'StorageAccountConnectionString'
+            storageAccountConnectionStringName: 'AzureWebJobsStorage'
+          }
+        }
+      }
+      scaleAndConcurrency: {
+        maximumInstanceCount: 100
+        instanceMemoryMB: 2048
+      }
+      runtime: {
+        name: 'dotnet-isolated'
+        version: '9.0'
+      }
+    }
     httpsOnly: true
-    clientAffinityEnabled: false
   }
 }
 
