@@ -37,6 +37,23 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2025-01-01' = {
   }
 }
 
+// Blob service for storage account
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.storage/2025-01-01/storageaccounts/blobservices?pivots=deployment-language-bicep
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2025-01-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+// Deployments container for Flex Consumption plan
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.storage/2025-01-01/storageaccounts/blobservices/containers?pivots=deployment-language-bicep
+resource deploymentsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2025-01-01' = {
+  parent: blobService
+  name: 'deployments'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 // Log Analytics Workspace for structured logging
 // https://learn.microsoft.com/en-us/azure/templates/microsoft.operationalinsights/2025-02-01/workspaces?pivots=deployment-language-bicep
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
@@ -112,10 +129,6 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: applicationInsights.properties.ConnectionString
-        }
-        {
-          name: 'WEBSITE_RUN_FROM_PACKAGE'
-          value: '1'
         }
       ]
     }
