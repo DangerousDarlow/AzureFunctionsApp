@@ -15,7 +15,7 @@ param(
     [string]$BicepFile = "main.bicep"
 )
 
-# Function to check if Azure CLI is installed
+# Check if Azure CLI is installed
 function Test-AzureCLI {
     try {
         $null = az --version
@@ -26,7 +26,7 @@ function Test-AzureCLI {
     }
 }
 
-# Function to check if user is logged in to Azure
+# Check if user is logged in to Azure
 function Test-AzureLogin {
     try {
         $account = az account show 2>$null
@@ -39,60 +39,63 @@ function Test-AzureLogin {
 
 Write-Host "Starting Azure Functions Infrastructure Deployment" -ForegroundColor Green
 
-# Check if Azure CLI is installed
 if (-not (Test-AzureCLI)) {
-    Write-Error "Azure CLI is not installed. Please install it from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli"
+    Write-Error "Azure CLI is not installed"
     exit 1
 }
 
-# Check if user is logged in
 if (-not (Test-AzureLogin)) {
-    Write-Host "You are not logged in to Azure. Please log in..." -ForegroundColor Yellow
-    az login
-    if (-not (Test-AzureLogin)) {
-        Write-Error "Failed to log in to Azure"
-        exit 1
-    }
+    Write-Error "Not logged in to Azure"
+    exit 1
 }
 
-# Set subscription if provided
-if ($SubscriptionId) {
-    Write-Host "Setting subscription to $SubscriptionId" -ForegroundColor Blue
-    az account set --subscription $SubscriptionId
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to set subscription"
-        exit 1
-    }
+# Set subscription
+Write-Host "Setting subscription to $SubscriptionId" -ForegroundColor Blue
+az account set --subscription $SubscriptionId
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to set subscription"
+    Write-Error "az account set --subscription id"
+    exit 1
 }
 
 # Show current subscription
 $currentSubscription = az account show --query "name" -o tsv
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($currentSubscription)) {
+    Write-Error "Failed to retrieve current subscription name"
+    Write-Error "az account show --query name -o tsv"
+    exit 1
+}
+
 Write-Host "Current subscription: $currentSubscription" -ForegroundColor Blue
 
-# Read parameters from parameters file
-Write-Host "Reading parameters from file..." -ForegroundColor Blue
+# Read from parameters file
+Write-Host "Reading parameters from file: $ParametersFile" -ForegroundColor Blue
 $parametersContent = Get-Content -Path $ParametersFile -Raw | ConvertFrom-Json
-$Location = $parametersContent.parameters.location.value
 $Name = $parametersContent.parameters.name.value
+$Location = $parametersContent.parameters.location.value
 
-# Build resource group name from pattern: rg-{appname}-{environment}
+# Build resource group and function app names
 $ResourceGroupName = "rg-$Name-$Environment"
+$FunctionAppName = "$Name-$Environment"
 
 Write-Host "Environment: $Environment" -ForegroundColor Blue
-Write-Host "Location: $Location" -ForegroundColor Blue
-Write-Host "Function App Base Name: $Name" -ForegroundColor Blue
+Write-Host "Function App Name: $FunctionAppName" -ForegroundColor Blue
 Write-Host "Resource Group Name: $ResourceGroupName" -ForegroundColor Blue
+Write-Host "Location: $Location" -ForegroundColor Blue
 
 # Create resource group if it doesn't exist
 Write-Host "Checking if resource group '$ResourceGroupName' exists..." -ForegroundColor Blue
 $rgExists = az group exists --name $ResourceGroupName
 if ($rgExists -eq "false") {
     Write-Host "Creating resource group '$ResourceGroupName' in '$Location'..." -ForegroundColor Blue
+
     az group create --name $ResourceGroupName --location $Location
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to create resource group"
+        Write-Error "az group create --name $ResourceGroupName --location $Location"
         exit 1
     }
+
     Write-Host "Resource group created successfully" -ForegroundColor Green
 } else {
     Write-Host "Resource group already exists" -ForegroundColor Green
@@ -128,7 +131,7 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Deployment failed"
     exit 1
 }
-Write-Host "Deployment completed successfully!" -ForegroundColor Green
+Write-Host "Deployment completed successfully" -ForegroundColor Green
 
 # Get deployment outputs
 Write-Host "Retrieving deployment outputs..." -ForegroundColor Blue
@@ -147,4 +150,4 @@ if ($outputs) {
     Write-Host "  App Insights Key: $($outputs.applicationInsightsInstrumentationKey.value)" -ForegroundColor White
 }
 
-Write-Host "Azure Functions infrastructure deployment completed!" -ForegroundColor Green
+Write-Host "Azure Functions infrastructure deployment completed" -ForegroundColor Green
