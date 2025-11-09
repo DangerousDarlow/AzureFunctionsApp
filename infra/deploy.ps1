@@ -52,7 +52,7 @@ function Test-DotNet {
 
 function Test-Tar {
     try {
-        $null = Tar --version
+        $null = tar --version
         return $true
     }
     catch {
