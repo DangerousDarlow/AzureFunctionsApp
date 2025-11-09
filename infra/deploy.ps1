@@ -1,4 +1,3 @@
-# Azure Functions App Deployment Script
 # This script builds and deploys the Azure Functions app
 
 param(
@@ -18,7 +17,7 @@ param(
     [string]$BuildConfiguration = "Release"
 )
 
-# Function to check if Azure CLI is installed
+# Check if Azure CLI is installed
 function Test-AzureCLI {
     try {
         $null = az --version
@@ -29,7 +28,7 @@ function Test-AzureCLI {
     }
 }
 
-# Function to check if user is logged in to Azure
+# Check if user is logged in to Azure
 function Test-AzureLogin {
     try {
         $account = az account show 2>$null
@@ -40,7 +39,7 @@ function Test-AzureLogin {
     }
 }
 
-# Function to check if dotnet is installed
+# Check if dotnet is installed
 function Test-DotNet {
     try {
         $null = dotnet --version
@@ -51,10 +50,9 @@ function Test-DotNet {
     }
 }
 
-# Function to check if Azure Functions Core Tools is installed
-function Test-FuncTools {
+function Test-Tar {
     try {
-        $null = func --version
+        $null = Tar --version
         return $true
     }
     catch {
@@ -64,32 +62,24 @@ function Test-FuncTools {
 
 Write-Host "Starting Azure Functions App Deployment" -ForegroundColor Green
 
-# Check if .NET is installed
-if (-not (Test-DotNet)) {
-    Write-Error ".NET SDK is not installed. Please install it from https://dotnet.microsoft.com/download"
-    exit 1
-}
-
-# Check if Azure CLI is installed
 if (-not (Test-AzureCLI)) {
-    Write-Error "Azure CLI is not installed. Please install it from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli"
+    Write-Error "Azure CLI is not installed"
     exit 1
 }
 
-# Check if Azure Functions Core Tools is installed
-if (-not (Test-FuncTools)) {
-    Write-Error "Azure Functions Core Tools is not installed. Please install it from https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local"
-    exit 1
-}
-
-# Check if user is logged in
 if (-not (Test-AzureLogin)) {
-    Write-Host "You are not logged in to Azure. Please log in..." -ForegroundColor Yellow
-    az login
-    if (-not (Test-AzureLogin)) {
-        Write-Error "Failed to log in to Azure"
-        exit 1
-    }
+    Write-Error "Not logged in to Azure"
+    exit 1
+}
+
+if (-not (Test-DotNet)) {
+    Write-Error ".NET SDK is not installed"
+    exit 1
+}
+
+if (-not (Test-Tar)) {
+    Write-Error "Tar is not installed"
+    exit 1
 }
 
 # Set subscription
@@ -97,15 +87,22 @@ Write-Host "Setting subscription to $SubscriptionId" -ForegroundColor Blue
 az account set --subscription $SubscriptionId
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Failed to set subscription"
+    Write-Error "az account set --subscription id"
     exit 1
 }
 
 # Show current subscription
 $currentSubscription = az account show --query "name" -o tsv
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($currentSubscription)) {
+    Write-Error "Failed to retrieve current subscription name"
+    Write-Error "az account show --query name -o tsv"
+    exit 1
+}
+
 Write-Host "Current subscription: $currentSubscription" -ForegroundColor Blue
 
-# Read parameters from parameters file
-Write-Host "Reading parameters from file..." -ForegroundColor Blue
+# Read name from parameters file
+Write-Host "Reading parameters from file: $ParametersFile" -ForegroundColor Blue
 $parametersContent = Get-Content -Path $ParametersFile -Raw | ConvertFrom-Json
 $Name = $parametersContent.parameters.name.value
 
@@ -120,73 +117,86 @@ Write-Host "Project Path: $ProjectPath" -ForegroundColor Blue
 Write-Host "Build Configuration: $BuildConfiguration" -ForegroundColor Blue
 
 # Verify resource group exists
-Write-Host "Checking if resource group '$ResourceGroupName' exists..." -ForegroundColor Blue
+Write-Host "Checking if resource group exists..." -ForegroundColor Blue
+
 $rgExists = az group exists --name $ResourceGroupName
-if ($rgExists -eq "false") {
-    Write-Error "Resource group '$ResourceGroupName' does not exist. Please run provision.ps1 first."
+if ($LASTEXITCODE -ne 0 -or $rgExists -eq "false") {
+    Write-Error "Resource group does not exist"
+    Write-Error "az group exists --name $ResourceGroupName"
     exit 1
 }
+
 Write-Host "Resource group exists" -ForegroundColor Green
 
 # Verify function app exists
-Write-Host "Checking if function app '$FunctionAppName' exists..." -ForegroundColor Blue
-$functionAppExists = az functionapp show --name $FunctionAppName --resource-group $ResourceGroupName 2>$null
-if (-not $functionAppExists) {
-    Write-Error "Function app '$FunctionAppName' does not exist. Please run provision.ps1 first."
+Write-Host "Checking if function app exists..." -ForegroundColor Blue
+
+$functionAppDetails = az functionapp show --name $FunctionAppName --resource-group $ResourceGroupName 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Function app does not exist or could not be queried"
+    Write-Error "az functionapp show --name $FunctionAppName --resource-group $ResourceGroupName"
     exit 1
 }
+
 Write-Host "Function app exists" -ForegroundColor Green
 
 # Build the project
 Write-Host "Building the Azure Functions app..." -ForegroundColor Blue
 $projectDir = Split-Path -Parent $ProjectPath
 $publishDir = Join-Path $projectDir "bin\$BuildConfiguration\net9.0\publish"
+Write-Host "Publish directory: $publishDir" -ForegroundColor Blue
 
-# Clean previous builds
 if (Test-Path $publishDir) {
-    Write-Host "Cleaning previous build output..." -ForegroundColor Blue
     Remove-Item -Path $publishDir -Recurse -Force
 }
 
-# Build and publish
-dotnet publish $ProjectPath `
-    --configuration $BuildConfiguration `
-    --output $publishDir `
-    --verbosity minimal
+dotnet publish $ProjectPath --configuration $BuildConfiguration --output $publishDir --verbosity minimal
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed"
+    Write-Error "dotnet publish $ProjectPath --configuration $BuildConfiguration --output $publishDir --verbosity minimal"
     exit 1
 }
+
 Write-Host "Build completed successfully" -ForegroundColor Green
 
-# Deploy to Azure Functions using Core Tools
-Write-Host "Deploying to Azure Functions app '$FunctionAppName'..." -ForegroundColor Blue
+Write-Host "Creating deployment zip file using tar..." -ForegroundColor Blue
 
-# Change to the publish directory for deployment
-Set-Location $publishDir
+$originalDir = Get-Location
 
-# Explicitly specify runtime to avoid detection issues when publishing from the compiled output
-func azure functionapp publish $FunctionAppName --no-build --dotnet-isolated
+$zipPath = Join-Path $originalDir "deploy.zip"
+if (Test-Path $zipPath) {
+    Remove-Item -Path $zipPath -Force
+}
 
+try {
+    Set-Location $publishDir
+
+    tar -acf $zipPath *
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to create zip file"
+        Write-Error "cd $publishDir; tar -acf $zipPath *"
+        exit 1
+    }
+}
+catch {
+    Write-Error "Failed to create zip file: $($_.Exception.Message)"
+    Set-Location $originalDir
+    exit 1
+}
+finally {
+    Set-Location $originalDir
+}
+
+Write-Host "Deployment zip file created at: $zipPath" -ForegroundColor Green
+
+$deployDetails = az functionapp deployment source config-zip --resource-group $ResourceGroupName --name $FunctionAppName --src $zipPath 2>$null
 if ($LASTEXITCODE -ne 0) {
-    Set-Location $PSScriptRoot
     Write-Error "Deployment failed"
+    Write-Error "az functionapp deployment source config-zip --resource-group $ResourceGroupName --name $FunctionAppName --src $zipPath"
     exit 1
 }
 
-# Return to the script directory
-Set-Location $PSScriptRoot
+Write-Host "Deployment completed successfully" -ForegroundColor Green
 
-Write-Host "Deployment completed successfully!" -ForegroundColor Green
-
-# Get function app URL
-$functionAppUrl = az functionapp show `
-    --resource-group $ResourceGroupName `
-    --name $FunctionAppName `
-    --query "defaultHostName" `
-    --output tsv
-
-Write-Host "Function App URL: https://$functionAppUrl" -ForegroundColor Yellow
-
-Write-Host "Azure Functions app deployment completed!" -ForegroundColor Green
+Write-Host "Azure Functions app deployment completed successfully" -ForegroundColor Green
