@@ -20,6 +20,7 @@ var storageAccountName = take('${replace(functionAppName, '-', '')}san', 24)
 var logAnalyticsWorkspaceName = '${functionAppName}-law'
 var applicationInsightsName = '${functionAppName}-ai'
 var appServicePlanName = '${functionAppName}-asp'
+var staticWebAppName = '${functionAppName}-swa'
 
 // Storage Account for Azure Functions
 // https://learn.microsoft.com/en-us/azure/templates/microsoft.storage/2025-01-01/storageaccounts?pivots=deployment-language-bicep
@@ -156,6 +157,23 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
   }
 }
 
+// Static Web App - Free tier
+// https://learn.microsoft.com/en-us/azure/templates/microsoft.web/2024-11-01/staticsites?pivots=deployment-language-bicep
+resource staticWebApp 'Microsoft.Web/staticSites@2024-11-01' = {
+  name: staticWebAppName
+  location: 'westeurope'
+  tags: tags
+  sku: {
+    name: 'Free'
+    tier: 'Free'
+  }
+  properties: {
+    allowConfigFileUpdates: true
+    stagingEnvironmentPolicy: 'Enabled'
+    enterpriseGradeCdnStatus: 'Disabled'
+  }
+}
+
 // Output values
 output functionAppName string = functionApp.name
 output functionAppUrl string = 'https://${functionApp.properties.defaultHostName}'
@@ -165,3 +183,6 @@ output applicationInsightsName string = applicationInsights.name
 output applicationInsightsInstrumentationKey string = applicationInsights.properties.InstrumentationKey
 output applicationInsightsConnectionString string = applicationInsights.properties.ConnectionString
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.id
+output staticWebAppName string = staticWebApp.name
+output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
+output staticWebAppId string = staticWebApp.id
