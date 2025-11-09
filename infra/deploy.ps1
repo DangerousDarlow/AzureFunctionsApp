@@ -172,6 +172,9 @@ if (Test-Path $zipPath) {
 try {
     Set-Location $publishDir
 
+    # For some reason if PowerShell command `Compress-Archive` is used to create the zip file deployment fails with error
+    # `InvalidPackageContentException: Package content validation failed: Cannot find required .azurefunctions directory at root level in the .zip package.`.
+    # The error is incorrect and the archive does contain the directory at root level. If the archive is created using tar or 7zip the problem does not occur.
     tar -acf $zipPath *
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to create zip file"
