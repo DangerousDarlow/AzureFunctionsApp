@@ -42,7 +42,7 @@ This directory contains Bicep templates and deployment scripts for provisioning 
 
 2. Run deployment script
    ```powershell
-   .\provision.ps1 -SubscriptionId {subscription_id} -Environment {environment}
+   .\deploy-app.ps1 -SubscriptionId {subscription_id} -Environment {environment}
    ```
 
    The script will automatically:

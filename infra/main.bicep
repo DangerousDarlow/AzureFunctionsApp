@@ -157,7 +157,7 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
   }
 }
 
-// Static Web App - Free tier
+// Static Web App
 // https://learn.microsoft.com/en-us/azure/templates/microsoft.web/2024-11-01/staticsites?pivots=deployment-language-bicep
 resource staticWebApp 'Microsoft.Web/staticSites@2024-11-01' = {
   name: staticWebAppName
