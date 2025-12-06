@@ -143,7 +143,7 @@ Write-Host "Function app exists" -ForegroundColor Green
 # Build the project
 Write-Host "Building the Azure Functions app..." -ForegroundColor Blue
 $projectDir = Split-Path -Parent $ProjectPath
-$publishDir = Join-Path $projectDir "bin\$BuildConfiguration\net9.0\publish"
+$publishDir = Join-Path $projectDir "bin\$BuildConfiguration\publish"
 Write-Host "Publish directory: $publishDir" -ForegroundColor Blue
 
 if (Test-Path $publishDir) {
