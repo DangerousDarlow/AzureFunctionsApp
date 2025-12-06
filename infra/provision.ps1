@@ -2,7 +2,7 @@
 # This script deploys the Azure Functions app infrastructure using Bicep
 
 param(
-    [Parameter(Mandatory = $false)]
+    [Parameter(Mandatory = $true)]
     [string]$SubscriptionId,
 
     [Parameter(Mandatory = $true)]
