@@ -150,7 +150,7 @@ resource functionApp 'Microsoft.Web/sites@2024-11-01' = {
       }
       runtime: {
         name: 'dotnet-isolated'
-        version: '9.0'
+        version: '10.0'
       }
     }
     httpsOnly: true
